@@ -1,0 +1,3 @@
+[MESSAGES CONTROL]
+disable = C0111, R0801
+max-args = 7

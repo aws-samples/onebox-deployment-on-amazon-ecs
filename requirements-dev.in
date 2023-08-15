@@ -1,0 +1,12 @@
+-c service/web_api/requirements.txt
+-c requirements.txt
+bandit
+black
+coverage
+flake8
+isort
+mypy
+pylint
+radon
+safety
+xenon
