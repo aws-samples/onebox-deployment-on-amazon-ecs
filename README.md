@@ -54,7 +54,7 @@ This AWS CDK application uses the same account to mimic three environments:
 ## Prerequisites
 ### Clone This Repository
 ```
-git clone git@ssh.gitlab.aws.dev:fibertdf/onebox-deployment-on-ecs.git
+git clone git@github.com:aws-samples/onebox-deployment-on-amazon-ecs.git
 cd onebox-deployment-on-ecs
 ```
 
