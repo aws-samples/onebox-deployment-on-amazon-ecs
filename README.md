@@ -53,7 +53,7 @@ This AWS CDK application uses the same account to mimic three environments:
 # Usage
 ## Prerequisites
 ### Clone This Repository
-```
+```bash
 git clone git@github.com:aws-samples/onebox-deployment-on-amazon-ecs.git
 cd onebox-deployment-on-ecs
 ```
@@ -62,7 +62,7 @@ cd onebox-deployment-on-ecs
 
 ### Install Dependencies
 Install the CDK toolkit, CDK construct-library and other dependencies.
-```
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
 
@@ -73,11 +73,11 @@ This AWS CDK application uses [Docker](https://www.docker.com/) to build contain
 
 ## Deploy Backend Service To Sandbox
 #### Deploy The BackendSandbox Stack
-```
+```bash
 npx cdk deploy OneBoxDeploymentOnECS-Service-Sandbox
 ```
 Once the deployment finishes, store the Application Load Balancer (ALB) URL in an environment variable:
-```
+```bash
 export SANDBOX_ALB=$(aws cloudformation describe-stacks \
   --stack-name OneBoxDeploymentOnECS-Service-Sandbox \
   --query 'Stacks[0].Outputs[?OutputKey==`WebAPIEndpoint`].OutputValue' \
@@ -87,7 +87,7 @@ echo SANDBOX_ALB=$SANDBOX_ALB
 ```
 
 #### Verify That The Backend Service Works
-```
+```bash
 curl $SANDBOX_ALB
 ```
 You should get `{"status": "OK"}`
@@ -96,7 +96,7 @@ You should get `{"status": "OK"}`
 #### Create A New AWS CodeCommit Repository
 To make it easier following the example, the next steps create an AWS CodeCommit repository and use it as source. In this example, I'm authenticating into AWS CodeCommit using [git-remote-codecommit](https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-git-remote-codecommit.html). Once you have `git-remote-codecommit` configured you can copy and paste the following commands:
 
-```
+```bash
 REPO_NAME=$(aws codecommit create-repository \
     --repository-name oneboxdeploymentonecs \
     --output text \
@@ -104,19 +104,19 @@ REPO_NAME=$(aws codecommit create-repository \
 git remote set-url --push origin codecommit://${REPO_NAME}
 ```
 #### Push Project Code 
-```
+```bash
 git push 
 ```
 
 #### Deploy The Toolchain Stack
-```
+```bash
 npx cdk deploy OneBoxDeploymentOnECS-Toolchain-Deployments
 ```
 Deploying the Toolchain stack automatically triggers the AWS CodePipeline pipeline. The pipeline deploys the backend service to production
 
 
 Wait until the pipeline successfully finishes executing, then store the production ALB URL into an environment variable:
-```
+```bash
 export PROD_ALB=$(aws cloudformation describe-stacks \
   --stack-name OneBoxDeploymentOnECS-Service-Prod \
   --query 'Stacks[0].Outputs[?OutputKey==`WebAPIEndpoint`].OutputValue' \
@@ -126,7 +126,7 @@ echo PROD_ALB=$PROD_ALB
 ```
 
 #### Verify That The Backend Service Works
-```
+```bash
 curl $PROD_ALB
 ```
 You should get `{"status": "OK"}`
@@ -142,23 +142,29 @@ The Amazon ECS service deployments we created are using [Amazon CloudWatch alarm
 
 For simulating user traffic we will use [siege](https://github.com/JoeDog/siege). Siege is an open source regression test and benchmark utility. To install, follow the instructions [here](https://github.com/JoeDog/siege/blob/master/INSTALL). Complete documentation for siege can be found at [www.joedog.org](https://www.joedog.org/).
 
-1. Go to the backend service runtime code [app.py](service/web_api/app.py)
+1. Go to the backend service runtime code [app.py](https://github.com/aws-samples/onebox-deployment-on-amazon-ecs/blob/98b544b2f1e7600b56377b934fa4151d061e4927/service/web_api/app.py#L15)
 2. In `get_health()`, uncomment the `import time` and `time.sleep(6)` lines
+   
+    ```python
+    def get_health() -> str:
+        import time
+        time.sleep(6)
+        return json.dumps({"status": HEALTH_OK})
+    ```
 
-       def get_health() -> str:
-           import time
-           time.sleep(6)
-           return json.dumps({"status": HEALTH_OK})
+4. Trigger a pipeline by pushing the "bugged" code into the AWS CodeCommit repository:
 
-3. Trigger a pipeline by pushing the "bugged" code into the AWS CodeCommit repository:
-       
-       git add .
-       git commit -m "inject response delay to app"
-       git push
+   ```bash
+    git add .
+    git commit -m "inject response delay to app"
+    git push
+   ```
 
-4. Simulate traffic to the production environment:    
-       
-       siege --time=1H --concurrent=100 --benchmark $PROD_ALB
+6. Simulate traffic to the production environment:    
+
+   ```bash    
+   siege --time=1H --concurrent=100 --benchmark $PROD_ALB
+   ```
           
 We expect the deployment to fail at the onebox pipeline stage and a rollback to take place.
 
@@ -166,12 +172,12 @@ We expect the deployment to fail at the onebox pipeline stage and a rollback to 
 ## Cleanup
 
 Delete the AWS CodeCommit repository
-```
+```bash
 aws codecommit delete-repository --repository-name ${REPO_NAME}
 ```
 
 Clean up all the resources created by AWS CDK
-```
+```bash
 npx cdk destroy "**" -f
 ```
 
