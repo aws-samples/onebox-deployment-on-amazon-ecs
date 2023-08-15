@@ -10,7 +10,7 @@ bandit==1.7.5
     # via -r requirements-dev.in
 black==23.7.0
     # via -r requirements-dev.in
-certifi==2023.5.7
+certifi==2023.7.22
     # via requests
 charset-normalizer==3.2.0
     # via requests
@@ -21,16 +21,14 @@ click==8.1.6
     #   safety
 colorama==0.4.6
     # via radon
-coverage==7.2.7
+coverage==7.3.0
     # via -r requirements-dev.in
-dill==0.3.6
+dill==0.3.7
     # via pylint
 dparse==0.6.3
     # via safety
-flake8==6.0.0
+flake8==6.1.0
     # via -r requirements-dev.in
-future==0.18.3
-    # via radon
 gitdb==4.0.10
     # via gitpython
 gitpython==3.1.32
@@ -43,7 +41,7 @@ isort==5.12.0
     #   pylint
 lazy-object-proxy==1.9.0
     # via astroid
-mando==0.6.4
+mando==0.7.1
     # via radon
 markdown-it-py==3.0.0
     # via rich
@@ -53,7 +51,7 @@ mccabe==0.7.0
     #   pylint
 mdurl==0.1.2
     # via markdown-it-py
-mypy==1.4.1
+mypy==1.5.0
     # via -r requirements-dev.in
 mypy-extensions==1.0.0
     # via
@@ -64,27 +62,27 @@ packaging==23.1
     #   black
     #   dparse
     #   safety
-pathspec==0.11.1
+pathspec==0.11.2
     # via black
 pbr==5.11.1
     # via stevedore
-platformdirs==3.9.1
+platformdirs==3.10.0
     # via
     #   black
     #   pylint
-pycodestyle==2.10.0
+pycodestyle==2.11.0
     # via flake8
-pyflakes==3.0.1
+pyflakes==3.1.0
     # via flake8
-pygments==2.15.1
+pygments==2.16.1
     # via rich
-pylint==2.17.4
+pylint==2.17.5
     # via -r requirements-dev.in
 pyyaml==6.0.1
     # via
     #   bandit
     #   xenon
-radon==5.1.0
+radon==6.0.1
     # via
     #   -r requirements-dev.in
     #   xenon
@@ -92,7 +90,7 @@ requests==2.31.0
     # via
     #   safety
     #   xenon
-rich==13.4.2
+rich==13.5.2
     # via bandit
 ruamel-yaml==0.17.32
     # via safety
@@ -114,18 +112,18 @@ tomli==2.0.1
     #   dparse
     #   mypy
     #   pylint
-tomlkit==0.11.8
+tomlkit==0.12.1
     # via pylint
 typing-extensions==4.7.1
     # via
     #   -c requirements.txt
     #   astroid
     #   mypy
-urllib3==2.0.3
+urllib3==2.0.4
     # via requests
 wrapt==1.15.0
     # via astroid
-xenon==0.9.0
+xenon==0.9.1
     # via -r requirements-dev.in
 
 # The following packages are considered to be unsafe in a requirements file:
