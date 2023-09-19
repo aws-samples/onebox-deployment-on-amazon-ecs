@@ -14,13 +14,13 @@ app = cdk.App()
 
 ServiceStack(
     app,
-    f"{constants.ServiceConstants.APP_NAME}-Service-Sandbox",
+    f"{constants.Service.APP_NAME}-Service-Sandbox",
     env=constants.SANDBOX_ENVIRONMENT,
 )
 
 ToolchainStack(
     app,
-    f"{constants.ServiceConstants.APP_NAME}-Toolchain-Deployments",
+    f"{constants.Service.APP_NAME}-Toolchain-Deployments",
     env=constants.DEPLOYMENTS_ENVIRONMENT,
 )
 

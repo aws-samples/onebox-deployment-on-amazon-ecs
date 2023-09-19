@@ -53,10 +53,10 @@ class Compute(Construct):
         task_container_image = self._get_task_container_image()
         container_parameters = ContainerParameters(
             image=task_container_image,
-            name=constants.ServiceConstants.APP_NAME,
-            cpu=constants.ServiceConstants.CPU,
-            memory=constants.ServiceConstants.MEMORY,
-            port=constants.ServiceConstants.PORT,
+            name=constants.Service.APP_NAME,
+            cpu=constants.Service.CPU,
+            memory=constants.Service.MEMORY,
+            port=constants.Service.PORT,
         )
         task_definition = self._create_task_definition(
             container_parameters=container_parameters,
@@ -69,7 +69,7 @@ class Compute(Construct):
         onebox_ecs_service_parameters = EcsServiceParameters(
             name=self.onebox_service_name,
             task_definition=task_definition,
-            autoscaling_parameters=constants.ServiceConstants.ONEBOX_AUTOSCALING_PARAMETERS,
+            autoscaling_parameters=constants.Service.ONEBOX_AUTOSCALING_PARAMETERS,
         )
         self.onebox_service = self._create_and_configure_ecs_service(
             ecs_cluster=ecs_cluster,
@@ -84,7 +84,7 @@ class Compute(Construct):
         fleet_ecs_service_parameters = EcsServiceParameters(
             name=self.fleet_service_name,
             task_definition=task_definition,
-            autoscaling_parameters=constants.ServiceConstants.FLEET_AUTOSCALING_PARAMETERS,
+            autoscaling_parameters=constants.Service.FLEET_AUTOSCALING_PARAMETERS,
         )
         self.fleet_service = self._create_and_configure_ecs_service(
             ecs_cluster=ecs_cluster,
@@ -101,8 +101,9 @@ class Compute(Construct):
     def _generate_ecs_cluster_name(self) -> str:
         deployment_environment_name = cdk.Stack.of(self).stack_name.split("-")[-1]
 
-        return constants.ServiceConstants.ECS_CLUSTER_NAME_TEMPLATE.format(
-            app=constants.ServiceConstants.APP_NAME, env=deployment_environment_name
+    def _generate_ecs_cluster_name(self, deployment_environment_name: str) -> str:
+        return constants.Service.ECS_CLUSTER_NAME_TEMPLATE.format(
+            app=constants.Service.APP_NAME, env=deployment_environment_name
         )
 
     def _create_ecs_cluster(self, vpc: ec2.Vpc, cluster_name: str) -> ecs.Cluster:
@@ -196,7 +197,7 @@ class Compute(Construct):
 
         target_group.add_target(ecs_service)
         ecs_service.connections.allow_from(
-            alb, ec2.Port.tcp(constants.ServiceConstants.PORT)
+            alb, ec2.Port.tcp(constants.Service.PORT)
         )
 
         return ecs_service
@@ -242,14 +243,14 @@ class Compute(Construct):
 
     @staticmethod
     def _generate_ecs_service_name(stage: str) -> str:
-        return constants.ServiceConstants.ECS_SERVICE_NAME_TEMPLATE.format(
-            app=constants.ServiceConstants.APP_NAME, stage=stage
+        return constants.Service.ECS_SERVICE_NAME_TEMPLATE.format(
+            app=constants.Service.APP_NAME, stage=stage
         )
 
     @staticmethod
     def _create_bootstrap_container_image() -> ecs.ContainerImage:
         container_image = ecs.ContainerImage.from_registry(
-            name=constants.ServiceConstants.BOOTSTRAP_CONTAINER_IMAGE,
+            name=constants.Service.BOOTSTRAP_CONTAINER_IMAGE,
         )
         return container_image
 

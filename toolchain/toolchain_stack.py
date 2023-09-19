@@ -22,7 +22,7 @@ class ToolchainStack(cdk.Stack):
         repository = codecommit.Repository.from_repository_name(
             self,
             "CodeCommitRepository",
-            repository_name=constants.ServiceConstants.APP_NAME.lower(),
+            repository_name=constants.Service.APP_NAME.lower(),
         )
         pipeline = self._create_base_cdk_pipeline(repository)
         # Include pre-production environments here, e.g., Alpha, Beta, Gamma
@@ -36,7 +36,7 @@ class ToolchainStack(cdk.Stack):
     ) -> cdk.pipelines.CodePipeline:
         pipeline_source = cdk.pipelines.CodePipelineSource.code_commit(
             repository=repository,
-            branch=constants.ServiceConstants.APP_REPOSITORY_BRANCH,
+            branch=constants.Service.APP_REPOSITORY_BRANCH,
         )
 
         allow_assume_bootstrap_lookup_role = iam.PolicyStatement(
@@ -77,8 +77,8 @@ class ToolchainStack(cdk.Stack):
 
         prod_service_stack = ServiceStack(
             prod_stage,
-            f"{constants.ServiceConstants.APP_NAME}-Service-Prod",
-            stack_name=f"{constants.ServiceConstants.APP_NAME}-Service-Prod",
+            f"{constants.Service.APP_NAME}-Service-Prod",
+            stack_name=f"{constants.Service.APP_NAME}-Service-Prod",
         )
 
         prod_stage_deployment = pipeline.add_stage(prod_stage)
@@ -195,7 +195,7 @@ class ToolchainStack(cdk.Stack):
                 create_output_directory_command,
                 create_image_definitions_command,
             ],
-            env={image_name_env_var_name: constants.ServiceConstants.APP_NAME},
+            env={image_name_env_var_name: constants.Service.APP_NAME},
             env_from_cfn_outputs={
                 image_uri_env_var_name: service_stack.runtime_container_image_url
             },

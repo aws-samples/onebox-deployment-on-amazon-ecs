@@ -57,7 +57,7 @@ class MetricAlarmParameters:
 
 
 # pylint: disable=R0903
-class ServiceConstants:
+class Service:
     APP_NAME = "OneBoxDeploymentOnECS"
     APP_REPOSITORY_BRANCH = "main"
 

@@ -17,14 +17,14 @@ class ReverseProxy(Construct):
         self.onebox_target_group = self._create_target_group(
             vpc=vpc,
             deployment_stage=constants.DeploymentStage.ONEBOX,
-            lb_health_check_path=constants.ServiceConstants.LB_HEALTH_CHECK_PATH,
-            lb_health_check_timeout=constants.ServiceConstants.LB_HEALTH_CHECK_TIMEOUT,
+            lb_health_check_path=constants.Service.LB_HEALTH_CHECK_PATH,
+            lb_health_check_timeout=constants.Service.LB_HEALTH_CHECK_TIMEOUT,
         )
         self.fleet_target_group = self._create_target_group(
             vpc=vpc,
             deployment_stage=constants.DeploymentStage.FLEET,
-            lb_health_check_path=constants.ServiceConstants.LB_HEALTH_CHECK_PATH,
-            lb_health_check_timeout=constants.ServiceConstants.LB_HEALTH_CHECK_TIMEOUT,
+            lb_health_check_path=constants.Service.LB_HEALTH_CHECK_PATH,
+            lb_health_check_timeout=constants.Service.LB_HEALTH_CHECK_TIMEOUT,
         )
         self.alb = self._create_alb(vpc)
 
@@ -53,9 +53,9 @@ class ReverseProxy(Construct):
         alb = elbv2.ApplicationLoadBalancer(self, "ALB", vpc=vpc, internet_facing=True)
         weighted_forward_action = self._create_weighted_forward_action(
             onebox_target_group=self.onebox_target_group,
-            onebox_weight=constants.ServiceConstants.ONEBOX_WEIGHT,
+            onebox_weight=constants.Service.ONEBOX_WEIGHT,
             fleet_target_group=self.fleet_target_group,
-            fleet_weight=constants.ServiceConstants.FLEET_WEIGHT,
+            fleet_weight=constants.Service.FLEET_WEIGHT,
         )
         alb.add_listener(
             "Listener",

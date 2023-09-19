@@ -19,7 +19,7 @@ class ComputeDeploymentMonitoring(Construct):
         super().__init__(scope, id_)
 
         target_response_time_alarm_parameters = (
-            constants.ServiceConstants.TARGET_RESPONSE_TIME_METRIC_ALARM_PARAMETERS
+            constants.Service.TARGET_RESPONSE_TIME_METRIC_ALARM_PARAMETERS
         )
 
         target_response_time_metric = target_group.metric(
