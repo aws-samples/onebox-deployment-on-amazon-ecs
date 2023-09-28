@@ -51,7 +51,7 @@ class ToolchainStack(cdk.Stack):
         synth_step = cdk.pipelines.CodeBuildStep(
             "SynthStep",
             input=pipeline_source,
-            install_commands=["npm i -g npm@9"],
+            # install_commands=["npm i -g npm@9"],
             commands=[
                 "./scripts/install-deps.sh",
                 "npx cdk synth",
