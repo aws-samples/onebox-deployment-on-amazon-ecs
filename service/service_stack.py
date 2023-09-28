@@ -17,7 +17,7 @@ class ServiceStack(cdk.Stack):
     def __init__(self, scope: Construct, id_: str, **kwargs: Any) -> None:
         super().__init__(scope, id_, **kwargs)
 
-        vpc = self._create_vpc()
+        vpc = ec2.Vpc(self, "Vpc")
         reverse_proxy = ReverseProxy(self, "ReverseProxy", vpc=vpc)
         self.compute = Compute(
             self,
@@ -38,14 +38,10 @@ class ServiceStack(cdk.Stack):
             target_service=self.compute.fleet_service,
         )
 
-        self._create_outputs(reverse_proxy)
+        self._create_outputs(reverse_proxy, self.compute)
+        self._add_cdk_nag_suppressions(vpc, reverse_proxy, self.compute)
 
-    def _create_vpc(self) -> ec2.Vpc:
-        vpc = ec2.Vpc(self, "Vpc")
-        self._add_vpc_cdk_nag_suppression(vpc)
-        return vpc
-
-    def _create_outputs(self, reverse_proxy: ReverseProxy) -> None:
+    def _create_outputs(self, reverse_proxy: ReverseProxy, compute: Compute) -> None:
         self._web_api_endpoint = cdk.CfnOutput(
             self,
             id="WebAPIEndpoint",
@@ -55,7 +51,7 @@ class ServiceStack(cdk.Stack):
         self._runtime_container_image_url = cdk.CfnOutput(
             self,
             id="RuntimeContainerImageUrl",
-            value=self.compute.runtime_container_image_asset.image_uri,
+            value=compute.runtime_container_image_asset.image_uri,
         )
 
     @property
@@ -67,11 +63,41 @@ class ServiceStack(cdk.Stack):
         return self._runtime_container_image_url
 
     @staticmethod
-    def _add_vpc_cdk_nag_suppression(vpc: ec2.Vpc) -> None:
+    def _add_cdk_nag_suppressions(
+        vpc: ec2.Vpc, reverse_proxy: ReverseProxy, compute: Compute
+    ) -> None:
+        # --- VPC ---
         vpc_flow_logs_suppression = cdk_nag.NagPackSuppression(
             id="AwsSolutions-VPC7",
             reason="VPC flow logs are not needed for this CI/CD deployment strategy demo",
         )
         cdk_nag.NagSuppressions.add_resource_suppressions(
             vpc, [vpc_flow_logs_suppression]
+        )
+
+        # -- Reverse Proxy ---
+        elb_access_logs_suppression = cdk_nag.NagPackSuppression(
+            id="AwsSolutions-ELB2",
+            reason="ELB access logs are not needed for this CI/CD deployment strategy demo",
+        )
+        cdk_nag.NagSuppressions.add_resource_suppressions(
+            reverse_proxy.alb, [elb_access_logs_suppression]
+        )
+
+        elb_security_group_suppression = cdk_nag.NagPackSuppression(
+            id="AwsSolutions-EC23",
+            reason="This ELB is internet facing and should be able to get traffic from 0.0.0.0/0",
+        )
+        cdk_nag.NagSuppressions.add_resource_suppressions(
+            reverse_proxy.alb, [elb_security_group_suppression], apply_to_children=True
+        )
+
+        # --- ECS tasks execution role ---
+        aws_managed_policy_suppression = cdk_nag.NagPackSuppression(
+            id="AwsSolutions-IAM4",
+            reason="Allow the usage of AWS managed policies in this CI/CD deployment strategy demo",
+        )
+        cdk_nag.NagSuppressions.add_resource_suppressions(
+            compute.task_execution_role,
+            [aws_managed_policy_suppression],
         )

@@ -4,7 +4,6 @@
 import aws_cdk as cdk
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_elasticloadbalancingv2 as elbv2
-import cdk_nag
 from constructs import Construct
 
 import constants
@@ -62,7 +61,6 @@ class ReverseProxy(Construct):
             default_action=weighted_forward_action,
             protocol=elbv2.ApplicationProtocol.HTTP,
         )
-        self._add_alb_cdk_nag_suppression(alb)
         return alb
 
     @staticmethod
@@ -84,21 +82,3 @@ class ReverseProxy(Construct):
             target_groups=[onebox_weighted_target_group, fleet_weighted_target_group],
         )
         return weighted_forward_action
-
-    @staticmethod
-    def _add_alb_cdk_nag_suppression(alb: elbv2.ApplicationLoadBalancer) -> None:
-        elb_access_logs_suppression = cdk_nag.NagPackSuppression(
-            id="AwsSolutions-ELB2",
-            reason="ELB access logs are not needed for this CI/CD deployment strategy demo",
-        )
-        cdk_nag.NagSuppressions.add_resource_suppressions(
-            alb, [elb_access_logs_suppression]
-        )
-
-        elb_security_group_suppression = cdk_nag.NagPackSuppression(
-            id="AwsSolutions-EC23",
-            reason="This ELB is internet facing and should be able to get traffic from 0.0.0.0/0",
-        )
-        cdk_nag.NagSuppressions.add_resource_suppressions(
-            alb, [elb_security_group_suppression], apply_to_children=True
-        )

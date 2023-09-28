@@ -28,7 +28,7 @@ class ToolchainStack(cdk.Stack):
         # Include pre-production environments here, e.g., Alpha, Beta, Gamma
         self._add_prod_stage_to_pipeline(pipeline)
 
-        self._add_pipeline_cdk_nag_suppression(pipeline)
+        self._add_cdk_nag_suppression(pipeline)
 
     def _create_base_cdk_pipeline(
         self,
@@ -205,7 +205,7 @@ class ToolchainStack(cdk.Stack):
         return image_definitions_creation_step
 
     @staticmethod
-    def _add_pipeline_cdk_nag_suppression(pipeline: cdk.pipelines.CodePipeline) -> None:
+    def _add_cdk_nag_suppression(pipeline: cdk.pipelines.CodePipeline) -> None:
         # Force the pipeline construct creation forward before applying suppressions.
         # See https://github.com/aws/aws-cdk/issues/18440
         pipeline.build_pipeline()

@@ -10,7 +10,6 @@ import aws_cdk.aws_ecr_assets as ecr_assets
 import aws_cdk.aws_ecs as ecs
 import aws_cdk.aws_elasticloadbalancingv2 as elbv2
 import aws_cdk.aws_iam as iam
-import cdk_nag
 from constructs import Construct
 
 import constants
@@ -61,8 +60,10 @@ class Compute(Construct):
             memory=constants.Service.MEMORY,
             port=constants.Service.PORT,
         )
+        self.task_execution_role = self._create_task_definition_execution_role()
         task_definition = self._create_task_definition(
             container_parameters=container_parameters,
+            execution_role=self.task_execution_role.without_policy_updates(),
         )
 
         # --- ECS Services ---
@@ -144,10 +145,8 @@ class Compute(Construct):
         return container_image
 
     def _create_task_definition(
-        self, container_parameters: ContainerParameters
+        self, container_parameters: ContainerParameters, execution_role: iam.IRole
     ) -> ecs.TaskDefinition:
-        execution_role = self._create_task_definition_execution_role()
-
         task_definition = ecs.FargateTaskDefinition(
             self,
             "TaskDefinition",
@@ -162,7 +161,7 @@ class Compute(Construct):
         )
         return task_definition
 
-    def _create_task_definition_execution_role(self) -> iam.IRole:
+    def _create_task_definition_execution_role(self) -> iam.Role:
         execution_role = iam.Role(
             self,
             "TaskDefinitionExecutionRole",
@@ -174,8 +173,7 @@ class Compute(Construct):
             ],
         )
 
-        self._add_cdk_nag_ecs_execution_role_suppression(execution_role)
-        return execution_role.without_policy_updates()
+        return execution_role
 
     @property
     def ecs_cluster_name(self) -> str:
@@ -202,9 +200,7 @@ class Compute(Construct):
         )
 
         target_group.add_target(ecs_service)
-        ecs_service.connections.allow_from(
-            alb, ec2.Port.tcp(constants.Service.PORT)
-        )
+        ecs_service.connections.allow_from(alb, ec2.Port.tcp(constants.Service.PORT))
 
         return ecs_service
 
@@ -228,16 +224,6 @@ class Compute(Construct):
         )
 
         return fargate_service
-
-    @staticmethod
-    def _add_cdk_nag_ecs_execution_role_suppression(execution_role: iam.Role) -> None:
-        aws_managed_policy_suppression = cdk_nag.NagPackSuppression(
-            id="AwsSolutions-IAM4",
-            reason="Allow the usage of AWS managed policies in this CI/CD deployment strategy demo",
-        )
-        cdk_nag.NagSuppressions.add_resource_suppressions(
-            execution_role, [aws_managed_policy_suppression]
-        )
 
     @staticmethod
     def _get_runtime_directory_path() -> str:
