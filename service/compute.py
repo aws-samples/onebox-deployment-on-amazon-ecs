@@ -46,11 +46,14 @@ class Compute(Construct):
         super().__init__(scope, id_)
 
         # --- ECS Cluster ---
-        self._ecs_cluster_name = self._generate_ecs_cluster_name()
-        ecs_cluster = self._create_ecs_cluster(vpc, self.ecs_cluster_name)
+        deployment_environment_name = self._extract_deployment_environment_name()
+        self._ecs_cluster_name = self._generate_ecs_cluster_name(
+            deployment_environment_name
+        )
+        ecs_cluster = self._create_ecs_cluster(vpc, self._ecs_cluster_name)
 
         # --- ECS Task Definition ---
-        task_container_image = self._get_task_container_image()
+        task_container_image = self._define_task_container_image()
         container_parameters = ContainerParameters(
             image=task_container_image,
             name=constants.Service.APP_NAME,
@@ -71,7 +74,7 @@ class Compute(Construct):
             task_definition=task_definition,
             autoscaling_parameters=constants.Service.ONEBOX_AUTOSCALING_PARAMETERS,
         )
-        self.onebox_service = self._create_and_configure_ecs_service(
+        self.onebox_service = self._create_ecs_service(
             ecs_cluster=ecs_cluster,
             target_group=reverse_proxy.onebox_target_group,
             alb=reverse_proxy.alb,
@@ -86,7 +89,7 @@ class Compute(Construct):
             task_definition=task_definition,
             autoscaling_parameters=constants.Service.FLEET_AUTOSCALING_PARAMETERS,
         )
-        self.fleet_service = self._create_and_configure_ecs_service(
+        self.fleet_service = self._create_ecs_service(
             ecs_cluster=ecs_cluster,
             target_group=reverse_proxy.fleet_target_group,
             alb=reverse_proxy.alb,
@@ -98,8 +101,8 @@ class Compute(Construct):
             self._create_runtime_container_image_asset()
         )
 
-    def _generate_ecs_cluster_name(self) -> str:
-        deployment_environment_name = cdk.Stack.of(self).stack_name.split("-")[-1]
+    def _extract_deployment_environment_name(self) -> str:
+        return cdk.Stack.of(self).stack_name.split("-")[-1]
 
     def _generate_ecs_cluster_name(self, deployment_environment_name: str) -> str:
         return constants.Service.ECS_CLUSTER_NAME_TEMPLATE.format(
@@ -117,13 +120,16 @@ class Compute(Construct):
         )
         return cluster
 
-    def _get_task_container_image(self) -> ecs.ContainerImage:
-        if (
-            constants.DeploymentEnvironment.PROD.lower()
-            in cdk.Stack.of(self).stack_name.lower()
-        ):
+    def _define_task_container_image(self) -> ecs.ContainerImage:
+        if self._is_production():
             return self._create_bootstrap_container_image()
         return self._create_runtime_container_image()
+
+    def _is_production(self) -> bool:
+        return (
+            constants.DeploymentEnvironment.PROD.lower()
+            in cdk.Stack.of(self).stack_name.lower()
+        )
 
     def _create_runtime_container_image(self) -> ecs.ContainerImage:
         directory_path = self._get_runtime_directory_path()
@@ -183,7 +189,7 @@ class Compute(Construct):
     def fleet_service_name(self) -> str:
         return self._fleet_service_name
 
-    def _create_and_configure_ecs_service(
+    def _create_ecs_service(
         self,
         ecs_cluster: ecs.Cluster,
         alb: elbv2.ApplicationLoadBalancer,
