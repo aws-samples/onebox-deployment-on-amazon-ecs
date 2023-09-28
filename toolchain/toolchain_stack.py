@@ -93,9 +93,9 @@ class ToolchainStack(cdk.Stack):
                 "image_definitions_generation_step.primary_output should never be None"
             )
 
-        cluster_name = prod_service_stack.compute.ecs_cluster_name
-        onebox_service_name = prod_service_stack.compute.onebox_service_name
-        fleet_service_name = prod_service_stack.compute.fleet_service_name
+        cluster_name = prod_service_stack.ecs_cluster_name
+        onebox_service_name = prod_service_stack.onebox_service_name
+        fleet_service_name = prod_service_stack.fleet_service_name
 
         onebox_deployment_step = self._create_ecs_deployment_step(
             account=prod_service_stack.account,

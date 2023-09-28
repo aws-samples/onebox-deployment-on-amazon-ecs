@@ -5,6 +5,8 @@ from typing import Any
 
 import aws_cdk as cdk
 import aws_cdk.aws_ec2 as ec2
+import aws_cdk.aws_ecr_assets as ecr_assets
+import aws_cdk.aws_elasticloadbalancingv2 as elbv2
 import cdk_nag
 from constructs import Construct
 
@@ -19,7 +21,7 @@ class ServiceStack(cdk.Stack):
 
         vpc = ec2.Vpc(self, "Vpc")
         reverse_proxy = ReverseProxy(self, "ReverseProxy", vpc=vpc)
-        self.compute = Compute(
+        compute = Compute(
             self,
             "Compute",
             vpc=vpc,
@@ -29,29 +31,38 @@ class ServiceStack(cdk.Stack):
             self,
             "OneboxComputeDeploymentMonitoring",
             target_group=reverse_proxy.onebox_target_group,
-            target_service=self.compute.onebox_service,
+            target_service=compute.onebox_service,
         )
         ComputeDeploymentMonitoring(
             self,
             "FleetComputeDeploymentMonitoring",
             target_group=reverse_proxy.fleet_target_group,
-            target_service=self.compute.fleet_service,
+            target_service=compute.fleet_service,
         )
 
-        self._create_outputs(reverse_proxy, self.compute)
-        self._add_cdk_nag_suppressions(vpc, reverse_proxy, self.compute)
+        # The following statements define class members used for creating public class properties
+        self._ecs_cluster_name = compute.ecs_cluster_name
+        self._onebox_service_name = compute.onebox_service_name
+        self._fleet_service_name = compute.fleet_service_name
 
-    def _create_outputs(self, reverse_proxy: ReverseProxy, compute: Compute) -> None:
+        self._create_outputs(reverse_proxy.alb, compute.runtime_container_image_asset)
+        self._add_cdk_nag_suppressions(vpc, reverse_proxy.alb, compute)
+
+    def _create_outputs(
+        self,
+        alb: elbv2.ApplicationLoadBalancer,
+        runtime_container: ecr_assets.DockerImageAsset,
+    ) -> None:
         self._web_api_endpoint = cdk.CfnOutput(
             self,
             id="WebAPIEndpoint",
-            value=reverse_proxy.alb.load_balancer_dns_name,
+            value=alb.load_balancer_dns_name,
         )
 
         self._runtime_container_image_url = cdk.CfnOutput(
             self,
             id="RuntimeContainerImageUrl",
-            value=compute.runtime_container_image_asset.image_uri,
+            value=runtime_container.image_uri,
         )
 
     @property
@@ -62,14 +73,26 @@ class ServiceStack(cdk.Stack):
     def runtime_container_image_url(self) -> cdk.CfnOutput:
         return self._runtime_container_image_url
 
+    @property
+    def ecs_cluster_name(self) -> str:
+        return self._ecs_cluster_name
+
+    @property
+    def onebox_service_name(self) -> str:
+        return self._onebox_service_name
+
+    @property
+    def fleet_service_name(self) -> str:
+        return self._fleet_service_name
+
     @staticmethod
     def _add_cdk_nag_suppressions(
-        vpc: ec2.Vpc, reverse_proxy: ReverseProxy, compute: Compute
+        vpc: ec2.Vpc, alb: elbv2.ApplicationLoadBalancer, compute: Compute
     ) -> None:
         # --- VPC ---
         vpc_flow_logs_suppression = cdk_nag.NagPackSuppression(
             id="AwsSolutions-VPC7",
-            reason="VPC flow logs are not needed for this CI/CD deployment strategy demo",
+            reason="Reduce costs for demo by disabling VPC flow logs",
         )
         cdk_nag.NagSuppressions.add_resource_suppressions(
             vpc, [vpc_flow_logs_suppression]
@@ -78,24 +101,26 @@ class ServiceStack(cdk.Stack):
         # -- Reverse Proxy ---
         elb_access_logs_suppression = cdk_nag.NagPackSuppression(
             id="AwsSolutions-ELB2",
-            reason="ELB access logs are not needed for this CI/CD deployment strategy demo",
+            reason="Reduce costs for demo by disabling ELB access logs",
         )
         cdk_nag.NagSuppressions.add_resource_suppressions(
-            reverse_proxy.alb, [elb_access_logs_suppression]
+            alb, [elb_access_logs_suppression]
         )
 
         elb_security_group_suppression = cdk_nag.NagPackSuppression(
             id="AwsSolutions-EC23",
-            reason="This ELB is internet facing and should be able to get traffic from 0.0.0.0/0",
+            reason="Allow incoming traffic from 0.0.0.0/0 to the ELB",
         )
+        # `apply_to_children=True` because ALB construct API does not expose its security group
         cdk_nag.NagSuppressions.add_resource_suppressions(
-            reverse_proxy.alb, [elb_security_group_suppression], apply_to_children=True
+            alb, [elb_security_group_suppression], apply_to_children=True
         )
 
         # --- ECS tasks execution role ---
+        # TODO: Discuss further about Role vs IRole and possibly use casting
         aws_managed_policy_suppression = cdk_nag.NagPackSuppression(
             id="AwsSolutions-IAM4",
-            reason="Allow the usage of AWS managed policies in this CI/CD deployment strategy demo",
+            reason="Simplifying IAM policy creation by allowing AWS managed policies",
         )
         cdk_nag.NagSuppressions.add_resource_suppressions(
             compute.task_execution_role,
